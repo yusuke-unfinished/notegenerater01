@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Content Factory Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Marked.js for Markdown rendering simulation -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; background-color: #0F172A; color: #E2E8F0; }
+        
+        /* Automation Line Animation */
+        .flow-line {
+            position: absolute;
+            background: linear-gradient(90deg, #3B82F6, #10B981);
+            height: 4px;
+            width: 0%;
+            transition: width 1s ease-in-out;
+        }
+        .flow-active { width: 100%; }
+
+        /* Card Styles */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            height: 300px;
+            max-height: 400px;
+        }
+
+        /* Typing & Writing Effects */
+        .typing::after { content: '|'; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .writing-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background-color: #10B981;
+            animation: blink 0.8s infinite;
+            vertical-align: middle;
+        }
+
+        /* Markdown Styles Simulation */
+        .markdown-body h2 { font-size: 1.5em; font-weight: bold; color: #fff; margin-top: 1.5em; margin-bottom: 0.5em; border-bottom: 1px solid #334155; padding-bottom: 0.3em; }
+        .markdown-body h3 { font-size: 1.2em; font-weight: bold; color: #e2e8f0; margin-top: 1.2em; margin-bottom: 0.5em; }
+        .markdown-body p { margin-bottom: 1em; line-height: 1.8; color: #cbd5e1; }
+        .markdown-body ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+        .markdown-body blockquote { border-left: 4px solid #3B82F6; padding-left: 1em; color: #94a3b8; font-style: italic; background: rgba(59, 130, 246, 0.1); padding: 0.5em 1em; border-radius: 0 4px 4px 0; }
+        .markdown-body strong { color: #10B981; font-weight: 700; }
+    </style>
+    <!-- Chosen Palette: Pro Automation
+         Background: #0F172A (Deep Navy)
+         Primary: #10B981 (Emerald - Completion/Writing)
+         Secondary: #3B82F6 (Blue - Logic/Structure)
+    -->
+
+    <!-- Application Structure Plan:
+         1. Two-Step Automation:
+            - Step 1: Structure (Outline) & Threads Hook.
+            - Step 2: Full Content Generation (The new feature).
+         2. Live Writing Demo:
+            - Simulates the AI "typing" out the article paragraph by paragraph.
+         3. Dynamic Inputs:
+            - User topic drives the "fake" content generation to make it feel real.
+    -->
+
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Header -->
+    <header class="border-b border-gray-700 sticky top-0 z-50 bg-[#0F172A]/90 backdrop-blur">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <h1 class="text-lg font-bold tracking-wide flex items-center text-white">
+                <span class="bg-gradient-to-r from-blue-600 to-green-500 text-white px-2 py-1 rounded text-xs mr-2">PRO</span>
+                Content Factory
+            </h1>
+            <div class="text-xs text-gray-400 hidden sm:block">記事全文執筆＆投稿自動化</div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+        <!-- Section 1: Input & Control -->
+        <section class="space-y-6">
+            <div class="max-w-4xl mx-auto text-center mb-8">
+                <h2 class="text-2xl font-bold text-white mb-2">完全自動化コンテンツ生成</h2>
+                <p class="text-gray-400 text-sm">テーマを入力するだけで、「構成案」から「記事全文」、そして「集客用ポスト」までを一気に生成します。</p>
+            </div>
+
+            <!-- Input Area -->
+            <div class="glass-panel p-6 rounded-xl shadow-lg border-t-4 border-blue-500">
+                <label class="block text-sm font-bold text-gray-300 mb-2">記事テーマ (Topic)</label>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <input type="text" id="topic-input" placeholder="例：個人開発者のためのAIマーケティング入門" class="flex-grow bg-gray-800 border border-gray-600 text-white rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors">
+                    <button id="btn-outline" onclick="generateOutline()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all flex items-center justify-center min-w-[180px]">
+                        <span>Step 1: 構成案作成</span>
+                    </button>
+                    <button id="btn-full" onclick="generateFullArticle()" class="hidden bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all items-center justify-center min-w-[180px]">
+                        <span>Step 2: 全文執筆 ✍️</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status Bar -->
+            <div class="relative h-8 w-full flex items-center justify-center overflow-hidden mt-4">
+                <div class="h-1 w-full bg-gray-700 rounded-full"></div>
+                <div id="progress-bar" class="flow-line rounded-full"></div>
+                <div class="absolute bg-[#0F172A] px-4 text-xs text-blue-400 font-mono" id="status-text">READY TO CREATE</div>
+            </div>
+        </section>
+
+        <!-- Section 2: Workspace (Split View) -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-[600px]">
+            
+            <!-- Editor Column (Note) -->
+            <div class="flex flex-col space-y-4">
+                <div class="flex items-center justify-between text-gray-400 text-sm px-2">
+                    <span class="font-bold flex items-center"><span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>Note Editor</span>
+                    <span id="word-count" class="text-xs bg-gray-800 px-2 py-1 rounded">0 chars</span>
+                </div>
+                
+                <div id="note-container" class="glass-panel flex-grow rounded-xl p-8 overflow-y-auto max-h-[600px] border border-gray-700 relative">
+                    <!-- Placeholder -->
+                    <div id="note-placeholder" class="absolute inset-0 flex items-center justify-center flex-col opacity-30 pointer-events-none">
+                        <svg class="w-16 h-16 text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        <span class="text-gray-400">Waiting for outline...</span>
+                    </div>
+                    
+                    <!-- Content Area -->
+                    <div id="note-content" class="markdown-body text-gray-300 text-sm hidden"></div>
+                </div>
+            </div>
+
+            <!-- Distribution Column (Threads) -->
+            <div class="flex flex-col space-y-4">
+                <div class="flex items-center justify-between text-gray-400 text-sm px-2">
+                    <span class="font-bold flex items-center"><span class="w-2 h-2 bg-white rounded-full mr-2"></span>Threads Preview</span>
+                    <span class="text-xs bg-gray-800 px-2 py-1 rounded">Auto-Generated</span>
+                </div>
+
+                <div class="glass-panel flex-grow rounded-xl p-6 border border-gray-700 relative bg-black/40">
+                    <div id="threads-content" class="space-y-4">
+                        <div class="opacity-30 text-center mt-20 text-gray-500">
+                            記事内容に合わせて<br>最適なスレッド投稿を生成します
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- Templates ---
+        const getTopic = () => document.getElementById('topic-input').value || "AIマーケティング";
+
+        // Step 1: Outline Template
+        const outlineTemplate = (topic) => `
+# 【保存版】${topic}で成果を出すための完全ガイド
+
+## はじめに
+- **読者への問いかけ**: なぜ今、${topic}が重要なのか？
+- **記事のゴール**: この記事を読めば、明日から実践できる状態になる。
+
+## 1. ${topic}が必要な「本当の理由」
+- 多くの人が誤解しているポイント
+- AIを使わないと損をする時間の計算（具体的な数字）
+
+## 2. 具体的な実践3ステップ
+- **Step 1**: 準備するもの（ツール選定）
+- **Step 2**: プロンプトの設計（コピペ用テンプレート）
+- **Step 3**: 自動化への組み込み
+
+## 3. よくある失敗と回避策
+- 初心者が陥る「品質の罠」
+- 人間の手が加わるべきポイント（編集長の役割）
+
+## おわりに
+- まずは一つだけ試してみよう
+- **特典**: 実践チェックリスト配布（有料エリア）
+`;
+
+        // Step 2: Full Article Parts (Simulated)
+        const articleParts = (topic) => [
+            `# 【保存版】${topic}で成果を出すための完全ガイド\n\n`,
+            
+            `## はじめに\n`,
+            `「${topic}」について、あなたはどんなイメージを持っていますか？\n多くの人は「難しそう」「エンジニアの領域だ」と敬遠しがちです。しかし、断言します。**今すぐ始めなければ、あなたのビジネスは3年以内に陳腐化します。**\n\n`,
+            `この記事では、精神論ではなく、具体的なツールと数字を用いて、誰でも再現可能な${topic}のノウハウを完全公開します。\n\n`,
+
+            `## 1. ${topic}が必要な「本当の理由」\n`,
+            `なぜ今、これほどまでに${topic}が叫ばれているのでしょうか。\n理由はシンプルです。**「レバレッジ（てこの原理）」が効くからです。**\n\n`,
+            `従来、1つのコンテンツを作るのに3時間かかっていました。しかし、AIと適切なワークフローを組めば、それは**15分**に短縮されます。空いた2時間45分で、あなたは「戦略」を練ることができます。\n`,
+            `> **重要:** AIは「手抜き」のためのツールではなく、「本質に向き合う時間」を作るためのツールです。\n\n`,
+
+            `## 2. 具体的な実践3ステップ\n`,
+            `では、具体的にどう進めればいいのか。以下の3ステップで解説します。\n\n`,
+            `### Step 1: ツール選定\n`,
+            `まずは基盤となるLLMを選びます。基本はChatGPT (GPT-4) で十分ですが、API連携を考えるならClaude 3.5 Sonnetも優秀です。\n\n`,
+            `### Step 2: プロンプトの設計\n`,
+            `ここが最大の肝です。以下のテンプレートを使ってください。\n\n`,
+            `\`\`\`text\nあなたはプロのマーケターです。\n以下のテーマについて、初心者にもわかりやすく解説してください。\n制約条件：\n- 専門用語を使わない\n- 具体例を必ず入れる\n\`\`\`\n\n`,
+            
+            `## 3. よくある失敗と回避策\n`,
+            `初心者が陥りがちなのが**「AIの出力をそのまま貼り付ける」**ことです。\nこれは絶対にNGです。AIはあくまで「優秀なインターン」。最終的な責任（ファクトチェック、トーン＆マナーの調整）は、編集長であるあなたが負う必要があります。\n\n`,
+            `## おわりに\n`,
+            `ここまで読んでいただきありがとうございます。\n${topic}は、一度仕組みを作れば、あなたの資産として働き続けます。\n\n`,
+            `--- \n**ここから先は有料エリアです**\n\n私が実際に使用している**「秘伝のプロンプト集（20選）」**と、コピーして使える**「自動化スクリプト」**を配布します。\n`
+        ];
+
+        // Threads Post Template
+        const threadsTemplate = (topic) => `
+            <!-- Post 1 -->
+            <div class="bg-black p-4 rounded-lg border border-gray-800 mb-3 animate-fade-in-up">
+                <div class="flex items-center mb-2">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-orange-500 mr-3"></div>
+                    <div class="text-sm font-bold text-white">Your Name <span class="text-gray-500 font-normal">@your_id</span></div>
+                </div>
+                <p class="text-gray-200 text-sm leading-relaxed">
+                    多くの人が「${topic}」で挫折する理由は、ツール選びで消耗しているからです。<br><br>
+                    実は、使うべきツールはたった1つでいい。<br>
+                    僕が月50万稼ぐためにやっている「シンプルな自動化フロー」を図解しました。🧵👇
+                </p>
+                <div class="mt-3 h-32 bg-gray-800 rounded flex items-center justify-center text-gray-500 text-xs border border-gray-700">
+                    [図解画像: 自動化フローチャート]
+                </div>
+            </div>
+
+            <!-- Post 2 -->
+            <div class="bg-black p-4 rounded-lg border border-gray-800 mb-3 ml-6 border-l-2 border-gray-700 animate-fade-in-up" style="animation-delay: 0.5s">
+                <p class="text-gray-200 text-sm leading-relaxed">
+                    重要なのは「AIに書かせる」ことではなく、「AIに構成させる」ことです。<br><br>
+                    記事の品質は9割が「構成」で決まります。<br>
+                    ここをAIに任せ、人間は「熱量」を足す。<br>
+                    この分業こそが最強の時短術です。
+                </p>
+            </div>
+
+            <!-- Post 3 -->
+            <div class="bg-black p-4 rounded-lg border border-gray-800 ml-6 border-l-2 border-gray-700 animate-fade-in-up" style="animation-delay: 1s">
+                <p class="text-gray-200 text-sm leading-relaxed">
+                    具体的なプロンプトと、そのまま使える構成テンプレートをNoteにまとめました。<br><br>
+                    これを見るだけで、明日からの記事作成時間が半分になります。<br><br>
+                    🔗 note.com/your-id/article...
+                </p>
+            </div>
+        `;
+
+        // --- Logic ---
+
+        function setStatus(text, colorClass = "text-blue-400") {
+            const status = document.getElementById('status-text');
+            status.innerText = text;
+            status.className = `absolute bg-[#0F172A] px-4 text-xs font-mono font-bold ${colorClass} typing`;
+        }
+
+        function updateProgressBar(active) {
+            const bar = document.getElementById('progress-bar');
+            if(active) bar.classList.add('flow-active');
+            else bar.classList.remove('flow-active');
+        }
+
+        // Step 1: Generate Outline
+        function generateOutline() {
+            const topic = getTopic();
+            const btnOutline = document.getElementById('btn-outline');
+            const noteContent = document.getElementById('note-content');
+            const placeholder = document.getElementById('note-placeholder');
+
+            btnOutline.disabled = true;
+            btnOutline.classList.add('opacity-50');
+            updateProgressBar(true);
+            setStatus("AI AGENT: STRUCTURING OUTLINE...", "text-yellow-400");
+
+            setTimeout(() => {
+                placeholder.classList.add('hidden');
+                noteContent.classList.remove('hidden');
+                
+                // Render Outline Markdown
+                noteContent.innerHTML = marked.parse(outlineTemplate(topic));
+                
+                setStatus("OUTLINE GENERATED. READY TO WRITE.", "text-green-400");
+                updateProgressBar(false);
+
+                // Show Step 2 Button
+                const btnFull = document.getElementById('btn-full');
+                btnFull.classList.remove('hidden');
+                btnFull.classList.add('flex', 'animate-bounce-short');
+                
+                // Update Word Count
+                document.getElementById('word-count').innerText = `${outlineTemplate(topic).length} chars`;
+
+            }, 1500);
+        }
+
+        // Step 2: Generate Full Article
+        function generateFullArticle() {
+            const topic = getTopic();
+            const btnFull = document.getElementById('btn-full');
+            const noteContent = document.getElementById('note-content');
+            const threadsContent = document.getElementById('threads-content');
+
+            btnFull.disabled = true;
+            btnFull.classList.add('opacity-50');
+            updateProgressBar(true);
+            setStatus("AI AGENT: WRITING FULL ARTICLE...", "text-green-500");
+
+            // Clear previous outline to start fresh writing simulation or append? 
+            // Let's clear and rewrite for effect
+            noteContent.innerHTML = '';
+            
+            const parts = articleParts(topic);
+            let currentPart = 0;
+
+            function writeNextPart() {
+                if (currentPart < parts.length) {
+                    // Create a container for the new part to fade in
+                    const div = document.createElement('div');
+                    div.innerHTML = marked.parse(parts[currentPart]);
+                    div.className = "animate-fade-in mb-4";
+                    
+                    // Add a cursor
+                    const cursor = document.createElement('span');
+                    cursor.className = "writing-cursor";
+                    div.appendChild(cursor);
+                    
+                    noteContent.appendChild(div);
+                    
+                    // Scroll to bottom
+                    const container = document.getElementById('note-container');
+                    container.scrollTop = container.scrollHeight;
+
+                    // Remove cursor from previous part
+                    const prevCursor = noteContent.querySelectorAll('.writing-cursor');
+                    if(prevCursor.length > 1) {
+                        prevCursor[0].remove();
+                    }
+
+                    // Update stats
+                    document.getElementById('word-count').innerText = `${noteContent.innerText.length} chars`;
+
+                    currentPart++;
+                    // Variable typing speed simulation
+                    setTimeout(writeNextPart, 800); 
+                } else {
+                    // Finished Writing Article
+                    document.querySelectorAll('.writing-cursor').forEach(el => el.remove());
+                    setStatus("ARTICLE COMPLETE. GENERATING THREADS...", "text-white");
+                    
+                    // Trigger Threads Generation
+                    setTimeout(generateThreads, 1000);
+                }
+            }
+
+            writeNextPart();
+        }
+
+        function generateThreads() {
+            const topic = getTopic();
+            const threadsContent = document.getElementById('threads-content');
+            
+            threadsContent.innerHTML = threadsTemplate(topic);
+            
+            setStatus("ALL TASKS COMPLETED SUCCESSFULLY", "text-blue-400");
+            updateProgressBar(false);
+        }
+
+        // --- Animations CSS (Tailwind config doesn't cover custom keyframes easily in CDN) ---
+        const styleSheet = document.createElement("style");
+        styleSheet.innerText = `
+            @keyframes fadeInUp {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; opacity: 0; }
+            
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+            .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+
+            @keyframes bounceShort {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-5px); }
+            }
+            .animate-bounce-short { animation: bounceShort 0.5s ease-in-out 2; }
+        `;
+        document.head.appendChild(styleSheet);
+
+    </script>
+</body>
+</html>
